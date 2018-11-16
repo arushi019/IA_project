@@ -27,9 +27,9 @@ def convert(img):
     midPointx = img.shape[0]//2
     midPointy = img.shape[1]//2
 
-    
+
     roi = binary_img[midPointx:,-300+midPointy:midPointy+300]
-    cv2.imshow("dd",roi)
+    # cv2.imshow("dd",roi)
 
     src = np.float32([[0, 187], [600, 187], [224, 30], [330, 30]])
     dst = np.float32([[150, 450], [350, 450], [150, 0], [350, 0]])
@@ -65,10 +65,9 @@ def convert(img):
 
     # edges = cv2.Canny(,50,150,apertureSize = 3)
 
-    lines = cv2.HoughLines(edges,1,np.pi/360,1)
+    lines = cv2.HoughLines(edges,1,np.pi/180,1)
     try:
         for rho,theta in lines[0]:
-            print(thetaT)
             a = np.cos(theta)
             b = np.sin(theta)
             x0 = a*rho
@@ -78,7 +77,7 @@ def convert(img):
             x2 = int(x0 - 100*(-b))
             y2 = int(y0 - 100*(a))
             cv2.line(roi[:,:roi.shape[1]//2],(x1,y1),(x2,y2),(255,0,255),2)
-        cv2.imshow('houghlines3.jpg',roi)
+        cv2.imshow('houghlines3',roi)
     except:
         print("ERROR: NO LANE DETECTED")
 
@@ -102,4 +101,3 @@ def convert(img):
     # plt.show()
     # cv2.imshow("bin",binary_img)
     # cv2.imshow("ee",roi)
-
