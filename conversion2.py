@@ -22,29 +22,14 @@ def drawLines(img, right_equation,left_equation,M):
 
     for i in range(len(right_fity)):
         rbg = cv2.circle(rbg,(fitx[i],right_fity[i]),5,(0,255,0),-1)
-    cv2.imshow("uiui",rbg)
+    # cv2.imshow("uiui",rbg)
     return rbg
-    # return
-    # Recast the x and y points into usable format for cv2.fillPoly()
-    pts_left = np.array([np.transpose(np.vstack([fitx, left_fity]))])
-    pts_right = np.array([np.transpose(np.vstack([fitx, right_fity]))])
-    pts = np.hstack((pts_left, pts_right))
-    pts = np.array(pts, dtype=np.int32)
 
-    print(pts)
-    # exit()
-    cv2.fillPoly(color_warp, pts,255)
-
-    # Warp the blank back to original image space using inverse perspective matrix (Minv)
-    # newwarp = cv2.warpPerspective(color_warp, M, (img.shape[1], img.shape[0]))
-    # # Combine the result with the original image
-    result = cv2.addWeighted(img, 1, color_warp, 0.3, 0)
-    cv2.imshow("colo",result)
-    return result
 def getSlope(x1,x2,y1,y2):
-    return (y1-y2)/(x1-x2)
+    return np.divide(y1-y2,x1-x2)
 def findLanes(img):
     gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
     cv2.imshow("djnj",gray_image)
 
 
@@ -57,13 +42,16 @@ def findLanes(img):
     mask_yw = cv2.bitwise_or(mask_white, mask_yellow)
     mask_yw_image = cv2.bitwise_and(gray_image, mask_yw)
 
-    # cv2.imshow("DD",mask_yw_image)
     mask_yw_image = np.array(mask_yw_image,dtype="uint8")
+    cv2.imshow("DD",mask_yw_image)
 
-    medianBlur = cv2.medianBlur(mask_yw_image,11)
+
+    medianBlur = cv2.medianBlur(mask_yw_image,5)
     gaussianBlur  = cv2.GaussianBlur(mask_yw_image,(5,5),0)
     # binary_img = cv2.medianBlur(mask_yw_image,3)
-
+    cv2.imshow("mm",cv2.medianBlur(cv2.bilateralFilter(mask_yw_image,9,75,75),3))
+    gaussianBlur = cv2.medianBlur(cv2.bilateralFilter(mask_yw_image,9,75,75),3)
+    # return
     low_threshold = 50
     high_threshold = 150
     canny_edges = cv2.Canny(gaussianBlur,low_threshold,high_threshold)
@@ -83,7 +71,7 @@ def findLanes(img):
     temp_image = np.zeros_like(canny_edges)
     roi_image = cv2.fillPoly(temp_image, vertices,255)
     roi = cv2.bitwise_and(roi_image,canny_edges)
-    cv2.imshow("fff",roi)
+    # cv2.imshow("fff",roi)
     # return
 
 
@@ -97,7 +85,11 @@ def findLanes(img):
 
     minLineLength = 200
     maxLineGap = 20
-    lines = cv2.HoughLinesP(warped_img,1,np.pi/180,30,minLineLength,maxLineGap)
+    sobel_x_img = np.uint8(cv2.Sobel(warped_img,cv2.CV_64F,1,0,ksize=5))
+    # return
+    cv2.imshow("sobelx",sobel_x_img)
+    lines = cv2.HoughLinesP(sobel_x_img,1,np.pi/180,30,minLineLength,maxLineGap)
+    # return
     left_lane_x = []
     left_lane_y = []
     right_lane_x = []
@@ -107,33 +99,55 @@ def findLanes(img):
     try:
         for line in lines:
             for x1,y1,x2,y2 in line:
-                if(getSlope(x1,x2,y1,y2)>0.9 and x1>midPointx and x2>midPointx ):# or getSlope(x1,x2,y1,y2)<-0.1):
-                    cv2.line(warped_img,(x1,y1),(x2,y2),255,2)
+                if(getSlope(x1,x2,y1,y2)>10 and x1>midPointx and x2>midPointx ):# or getSlope(x1,x2,y1,y2)<-0.1):
+                    cv2.line(warped_img,(x1,y1),(x2,y2),255,10)
                     right_lane_x.append(x1)
                     right_lane_x.append(x2)
                     right_lane_y.append(y1)
                     right_lane_y.append(y2)
-                    print(getSlope(x1,x2,y1,y2))
-                elif(getSlope(x1,x2,y1,y2)<-0.9 and x1<midPointx and x2<midPointx ):# or getSlope(x1,x2,y1,y2)<-0.1):
-                    cv2.line(warped_img,(x1,y1),(x2,y2),255,2)
+                    print("right lane",getSlope(x1,x2,y1,y2))
+                elif(getSlope(x1,x2,y1,y2)<-10 and x1<midPointx and x2<midPointx ):# or getSlope(x1,x2,y1,y2)<-0.1):
+                    cv2.line(warped_img,(x1,y1),(x2,y2),255,10)
                     left_lane_x.append(x1)
                     left_lane_x.append(x2)
                     left_lane_y.append(y1)
                     left_lane_y.append(y2)                    # right_lane./append()
-                    print(getSlope(x1,x2,y1,y2))
+                    print("left lane",getSlope(x1,x2,y1,y2))
                 # print(getSlope(x1,x2,y1,y2))
 
         cv2.imshow("lane",warped_img)
-        right_parameters = np.polyfit(right_lane_x, right_lane_y, 1)
-        right_equation = np.poly1d(right_parameters)
 
-        left_parameters = np.polyfit(left_lane_x, left_lane_y, 1)
-        left_equation = np.poly1d(left_parameters)
+        left_lane_x = np.array(left_lane_x,dtype = np.float32)
+        left_lane_y = np.array(left_lane_y,dtype = np.float32)
+        right_lane_x = np.array(right_lane_x,dtype = np.float32)
+        right_lane_y = np.array(right_lane_y,dtype = np.float32)
+
+        # left_lane_x-=left_lane_x.mean()
+        # right_lane_x-=right_lane_x.mean()
+        # right_lane_y-=right_lane_y.mean()
+        # left_lane_y-=left_lane_y.mean()
+
+        try:
+            right_parameters = np.polyfit(right_lane_x, right_lane_y, 1.8)
+            right_equation = np.poly1d(right_parameters)
+
+        except:
+            right_equation = "-18.8 x + 5604"
+
+        try:
+            left_parameters = np.polyfit(left_lane_x, left_lane_y, 1.8)
+            left_equation = np.poly1d(left_parameters)
+        except:
+            left_equation = "-13.63 x + 2069"
+
+        print(right_equation,left_equation)
         detect = drawLines(warped_img,right_equation,left_equation,M)
         toBack = cv2.warpPerspective(detect, M_reverse, (img.shape[1],img.shape[0]))
-        cv2.imshow("BACK",toBack)
-        total = cv2.addWeighted(img, 1, toBack, 0.3, 0)
+        # cv2.imshow("BACK",toBack)
+        total = cv2.addWeighted(img, 1, toBack,0.3, 0)
         cv2.imshow("total",total)
+        # cv2.imwrite("correct.jpg",total)
+        # cv2.imwrite("original.jpg",img)
     except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             print(e, exc_tb.tb_lineno)
