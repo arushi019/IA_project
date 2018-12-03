@@ -30,7 +30,7 @@ def getSlope(x1,x2,y1,y2):
 def findLanes(img):
     gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    cv2.imshow("djnj",gray_image)
+    # cv2.imshow("djnj",gray_image)
 
 
     lower_yellow = np.array([20, 100, 100], dtype = "uint8")
@@ -43,13 +43,13 @@ def findLanes(img):
     mask_yw_image = cv2.bitwise_and(gray_image, mask_yw)
 
     mask_yw_image = np.array(mask_yw_image,dtype="uint8")
-    cv2.imshow("DD",mask_yw_image)
+    # cv2.imshow("DD",mask_yw_image)
 
 
     medianBlur = cv2.medianBlur(mask_yw_image,5)
     gaussianBlur  = cv2.GaussianBlur(mask_yw_image,(5,5),0)
     # binary_img = cv2.medianBlur(mask_yw_image,3)
-    cv2.imshow("mm",cv2.medianBlur(cv2.bilateralFilter(mask_yw_image,9,75,75),3))
+    # cv2.imshow("mm",cv2.medianBlur(cv2.bilateralFilter(mask_yw_image,9,75,75),3))
     gaussianBlur = cv2.medianBlur(cv2.bilateralFilter(mask_yw_image,9,75,75),3)
     # return
     low_threshold = 50
@@ -87,7 +87,7 @@ def findLanes(img):
     maxLineGap = 20
     sobel_x_img = np.uint8(cv2.Sobel(warped_img,cv2.CV_64F,1,0,ksize=5))
     # return
-    cv2.imshow("sobelx",sobel_x_img)
+    # cv2.imshow("sobelx",sobel_x_img)
     lines = cv2.HoughLinesP(sobel_x_img,1,np.pi/180,30,minLineLength,maxLineGap)
     # return
     left_lane_x = []
@@ -115,7 +115,7 @@ def findLanes(img):
                     print("left lane",getSlope(x1,x2,y1,y2))
                 # print(getSlope(x1,x2,y1,y2))
 
-        cv2.imshow("lane",warped_img)
+        # cv2.imshow("lane",warped_img)
 
         left_lane_x = np.array(left_lane_x,dtype = np.float32)
         left_lane_y = np.array(left_lane_y,dtype = np.float32)
@@ -144,8 +144,9 @@ def findLanes(img):
         detect = drawLines(warped_img,right_equation,left_equation,M)
         toBack = cv2.warpPerspective(detect, M_reverse, (img.shape[1],img.shape[0]))
         # cv2.imshow("BACK",toBack)
-        total = cv2.addWeighted(img, 1, toBack,0.3, 0)
-        cv2.imshow("total",total)
+        total = cv2.addWeighted(img, 1, toBack,0.5, 0)
+        # cv2.imshow("total",total)
+        return total
         # cv2.imwrite("correct.jpg",total)
         # cv2.imwrite("original.jpg",img)
     except Exception as e:
